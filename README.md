@@ -9,20 +9,18 @@ It used wxPython, PHP, and MySQL.
 This repository is for *server* development. For client development, see 
 [https://github.com/ohack/maraudersmap-client/](Marauder's Map Client Repository).
 
-## About the Server
+## About the UI
 
-The original server stack was written in PHP and MySQL. We are attempting to improve and modernize it, 
-using Python, a simple microframework, [Flask](http://flask.pocoo.org/), and likely MySQL, or perhaps MongoDB, 
-depending on pending design decisions.
+The original web interface was written in custom javascript and presented via php. We are modernizing it 
+with a full redesign that uses a JSON interface for API calls. Since the javascript API is open, it will 
+be possible for 3rd parties to create custom plugins and unique location-enabled web applications.
 
 In addressing some of the issues of the previous version of *Marauder's Map @ Olin*, we will strive for
 
 ### Maintainability
 
-* Code will be legibile, compliant with [PEP8](http://www.python.org/dev/peps/pep-0008/),
-and commented (using the [Sphinx .rst markup syntax](sphinx.pocoo.org))
+* Code will be legibile and commented (using the [Sphinx .rst markup syntax](sphinx.pocoo.org))
 * Code will have tests to document its status 
-(using the [Python unittesting framework](http://docs.python.org/library/unittest.html))
 * The actual project will be documented in a way such that it can be extended, replicated,
 and/or restarted relatively easily
 
