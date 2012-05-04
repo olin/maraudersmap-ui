@@ -2,7 +2,7 @@
  * The div that contains the map image
  */
 div#map {
-  border: 5px solid red;
+  border: 5px solid black;
   position: relative;
 }
 
@@ -12,4 +12,9 @@ img#map-img {
 
 img.user {
   position: absolute;  
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
 }

@@ -30,6 +30,11 @@ Api.getPlaces = function (cb) {
 
 /* posting */
 
+Api.putUser = function (name, alias, cb) {
+	var args = {name: name, alias: alias || ''};
+	callback($.put('/api/users/' + name, args), cb);
+};
+
 Api.postPlace = function (floor, name, alias, cb) {
 	var args = {floor: floor, name: name, alias: alias || ''};
 	callback($.post('/api/places/', args), cb);
@@ -48,3 +53,4 @@ Api.postPosition = function (username, bind_id) {
 };
 
 })();
+

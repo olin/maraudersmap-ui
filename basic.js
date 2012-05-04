@@ -1,7 +1,13 @@
+var queryDict;
+
 $(function () {
 
-  var queryDict = parseQuery(window.location.search);
+  queryDict = parseQuery(window.location.search);
   console.log(queryDict);
+
+
+
+  //if (queryDict)
 
   // Get the image height as soon as the image loads
   var imgWidth;
@@ -10,14 +16,28 @@ $(function () {
     imgWidth = $('#map-img').width();
     imgHeight = $('#map-img').height();
 
-    $('#size').text(imgWidth + " X " + imgHeight);
+    //$('#size').text(imgWidth + " X " + imgHeight);
   })
 
   // Put user icons at the locations of mouse clicks on mouseclick on the map image
   $('#map-img').mousedown(function(eventObject) {
-    var mouseX = eventObject.pageX - $('#map-img').offset().left;
-    var mouseY = eventObject.pageY - $('#map-img').offset().top;
-    addUserIcon(mouseX, mouseY);
+    if (queryDict.action == 'place' && queryDict.signals != null) {
+      var mouseX = eventObject.pageX - $('#map-img').offset().left;
+      var mouseY = eventObject.pageY - $('#map-img').offset().top;
+
+      Api.postPlace('eh4', 'lounge', 'The SLAC Realm', function (err, json) {
+        console.log(err);
+        var place = json.place;
+
+        Api.postBind('jceipek', place.id, mouseX/imgWidth, mouseY/imgHeight, queryDict.signals, function (err, json) {
+          console.log(err);          
+          addUserIcon(mouseX, mouseY);
+        });
+
+      })
+
+    }
+
   });
 
   Api.getPositions(function (err, json) {
@@ -75,7 +95,7 @@ function parseQuery(str, separator) {
 				continue;
 			}
 
-			var bpv = k.substr(bps+1, bps+bpe-1)
+			var bpv = k.substr(bps+1, bps+bpe-2) // Tim Ryan fixed problem with original code
 			var k = k.substr(0,bps)
 			if (bpv.length <= 0) {
 				if (typeof(obj[k]) != 'object') obj[k] = []
