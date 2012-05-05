@@ -29,9 +29,10 @@ $(function () {
         console.log(err);
         var place = json.place;
 
-        Api.postBind('jceipek', place.id, mouseX/imgWidth, mouseY/imgHeight, queryDict.signals, function (err, json) {
+        Api.postBind(queryDict.username, place.id, mouseX/imgWidth, mouseY/imgHeight, queryDict.signals, function (err, json) {
           console.log(err);          
           addUserIcon(mouseX, mouseY);
+          reloadMapRoot();
         });
 
       })
@@ -53,6 +54,10 @@ $(function () {
 
 
 })
+
+function reloadMapRoot() {
+  window.location.href = window.location.origin + window.location.pathname;
+}
 
 function addUserIcon(x, y) {
   var user = document.createElement('img');
