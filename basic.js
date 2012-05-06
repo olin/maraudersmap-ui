@@ -7,42 +7,7 @@ $(function () {
  
  
   if (queryDict.action == 'place' && queryDict.signals != null) {
-
-    var dialog = document.createElement('div');
-    $(dialog).prop({'id': 'location-dialog', 'class': 'modal'});
-    
-    var dialogHeader = document.createElement('div');
-    $(dialogHeader).prop({'class': 'modal-header'});
-    $(dialogHeader).appendTo(dialog);
-
-    var dialogTitle = document.createElement('h3');
-    $(dialogTitle).html("Choose your Location:");
-    $(dialogTitle).appendTo(dialogHeader);
-
-    
-    var dialogBody = document.createElement('div');
-    $(dialogBody).prop({'class': 'modal-body'});    
-    $(dialogBody).appendTo(dialog);
-
-    var dialogBodyText = document.createElement('p');
-    $(dialogBodyText).html("Dialog Body");
-    $(dialogBodyText).appendTo(dialogBody);
-
-    var dialogFooter = document.createElement('div');
-    $(dialogFooter).prop({'class': 'modal-footer'});
-    $(dialogFooter).appendTo(dialog);
-
-    var doneButton = document.createElement('a');
-    $(doneButton).prop({'class': 'btn btn-primary', 'href':"#"});
-    $(doneButton).html("Done");
-    $(doneButton).appendTo(dialogFooter);
-    $(doneButton).click(function () {$(dialog).modal('hide');});
-
-    $(dialog).appendTo($('body'));
-
-    
-    $('#location-dialog').modal({keyboard: false});
-
+    createDialog();
   }
 
 
@@ -92,6 +57,94 @@ $(function () {
 
 function reloadMapRoot() {
   window.location.href = window.location.origin + window.location.pathname;
+}
+
+function createDialog() {
+    var dialog = document.createElement('div');
+    $(dialog).prop({'id': 'location-dialog', 'class': 'modal'});
+    
+    var dialogHeader = document.createElement('div');
+    $(dialogHeader).prop({'class': 'modal-header'});
+    $(dialogHeader).appendTo(dialog);
+
+    var dialogTitle = document.createElement('h3');
+    $(dialogTitle).html("Select your Location:");
+    $(dialogTitle).appendTo(dialogHeader);
+
+    var dialogBody = document.createElement('div');
+    $(dialogBody).prop({'class': 'modal-body'});    
+    $(dialogBody).appendTo(dialog);
+
+    var form = document.createElement('form');
+    $(form).prop({'class': 'form-horizontal'});
+    $(form).appendTo(dialogBody);
+
+    var buildingInput = document.createElement('select');
+    $(buildingInput).prop({'class': "span2"}); 
+    var opt;
+
+    opt = document.createElement('option');
+    $(opt).html("Building/Floor");    
+    $(opt).appendTo(buildingInput); 
+
+    opt = document.createElement('option');
+    $(opt).html("Outside");
+    $(opt).appendTo(buildingInput);    
+
+    for (var i=1; i<=4; i++) {
+      opt = document.createElement('option');
+      $(opt).html("West Hall " + i);    
+      $(opt).appendTo(buildingInput);    
+    }
+
+    for (var i=1; i<=4; i++) {
+      opt = document.createElement('option');
+      $(opt).html("East Hall " + i);    
+      $(opt).appendTo(buildingInput);    
+    }
+
+    for (var i=1; i<=4; i++) {
+      opt = document.createElement('option');
+      $(opt).html("Academic Center " + i);    
+      $(opt).appendTo(buildingInput);    
+    }
+
+    for (var i=1; i<=4; i++) {
+      opt = document.createElement('option');
+      $(opt).html("Campus Center " + i);    
+      $(opt).appendTo(buildingInput);    
+    }
+
+    for (var i=1; i<=4; i++) {
+      opt = document.createElement('option');
+      $(opt).html("Milas Hall " + i);    
+      $(opt).appendTo(buildingInput);    
+    }
+
+    $(buildingInput).appendTo(form);
+
+    var nameInput = document.createElement('input');
+    $(nameInput).prop({'type': "text", 'class': "span3", 'placeholder': "Common Name (Ex: lounge)"});
+    $(nameInput).appendTo(form);
+
+    var aliasInput = document.createElement('input');
+    $(aliasInput).prop({'type': "text", 'class': "span3", 'placeholder': "Nickname (Ex: The SLAC Realm)"});
+    $(aliasInput).appendTo(form);
+
+    var dialogFooter = document.createElement('div');
+    $(dialogFooter).prop({'class': 'modal-footer'});
+    $(dialogFooter).appendTo(dialog);
+
+    var doneButton = document.createElement('a');
+    $(doneButton).prop({'class': 'btn btn-primary', 'href':"#"});
+    $(doneButton).html("Done");
+    $(doneButton).appendTo(dialogFooter);
+    $(doneButton).click(function () {$(dialog).modal('hide');});
+
+    $(dialog).appendTo($('body'));
+
+    
+    $('#location-dialog').modal({keyboard: false});  
 }
 
 function addUserIcon(username, x, y) {
