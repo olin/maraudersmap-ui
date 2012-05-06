@@ -4,10 +4,47 @@ $(function () {
 
   queryDict = parseQuery(window.location.search);
   console.log(queryDict);
+ 
+ 
+  if (queryDict.action == 'place' && queryDict.signals != null) {
 
+    var dialog = document.createElement('div');
+    $(dialog).prop({'id': 'location-dialog', 'class': 'modal'});
+    
+    var dialogHeader = document.createElement('div');
+    $(dialogHeader).prop({'class': 'modal-header'});
+    $(dialogHeader).appendTo(dialog);
 
+    var dialogTitle = document.createElement('h3');
+    $(dialogTitle).html("Choose your Location:");
+    $(dialogTitle).appendTo(dialogHeader);
 
-  //if (queryDict)
+    
+    var dialogBody = document.createElement('div');
+    $(dialogBody).prop({'class': 'modal-body'});    
+    $(dialogBody).appendTo(dialog);
+
+    var dialogBodyText = document.createElement('p');
+    $(dialogBodyText).html("Dialog Body");
+    $(dialogBodyText).appendTo(dialogBody);
+
+    var dialogFooter = document.createElement('div');
+    $(dialogFooter).prop({'class': 'modal-footer'});
+    $(dialogFooter).appendTo(dialog);
+
+    var doneButton = document.createElement('a');
+    $(doneButton).prop({'class': 'btn btn-primary', 'href':"#"});
+    $(doneButton).html("Done");
+    $(doneButton).appendTo(dialogFooter);
+    $(doneButton).click(function () {$(dialog).modal('hide');});
+
+    $(dialog).appendTo($('body'));
+
+    
+    $('#location-dialog').modal({keyboard: false});
+
+  }
+
 
   // Get the image height as soon as the image loads
   var imgWidth;
@@ -15,8 +52,6 @@ $(function () {
   $('#map-img').on('load', function () {
     imgWidth = $('#map-img').width();
     imgHeight = $('#map-img').height();
-
-    //$('#size').text(imgWidth + " X " + imgHeight);
   })
 
   // Put user icons at the locations of mouse clicks on mouseclick on the map image
@@ -31,7 +66,7 @@ $(function () {
 
         Api.postBind(queryDict.username, place.id, mouseX/imgWidth, mouseY/imgHeight, queryDict.signals, function (err, json) {
           console.log(err);          
-          addUserIcon(mouseX, mouseY);
+          addUserIcon(username, mouseX, mouseY);
           reloadMapRoot();
         });
 
@@ -47,7 +82,7 @@ $(function () {
     for (var i=0; i < positions.length; i++) {
       Api.getBind(positions[i].bind, function (err, json) {
         var bind = json.bind;
-        addUserIcon(bind.x*imgWidth, bind.y*imgHeight);
+        addUserIcon(bind.username, bind.x*imgWidth, bind.y*imgHeight);
       });
     }
   });
@@ -59,9 +94,9 @@ function reloadMapRoot() {
   window.location.href = window.location.origin + window.location.pathname;
 }
 
-function addUserIcon(x, y) {
+function addUserIcon(username, x, y) {
   var user = document.createElement('img');
-  $(user).prop({'class': 'user', 'alt': 'Julian', 'src': 'Feet Raster.png'});
+  $(user).prop({'class': 'user', 'alt': username, 'src': 'Feet Raster.png'});
   $(user).on('load', function () {
       var userPosX = x - user.width/2.0;
       var userPosY = y - user.height/2.0;
