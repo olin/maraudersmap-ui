@@ -269,7 +269,7 @@ function parseQuery(str, separator) {
 				continue;
 			}
 
-			var bpv = k.substr(bps+1, bps+bpe-2) // Tim Ryan fixed problem with original code
+			var bpv = k.substr(bps+1, bpe) // Julian Ceipek changed this because it didn't work properly
 			var k = k.substr(0,bps)
 			if (bpv.length <= 0) {
 				if (typeof(obj[k]) != 'object') obj[k] = []
@@ -282,3 +282,5 @@ function parseQuery(str, separator) {
 		return obj;
 
 }
+
+
