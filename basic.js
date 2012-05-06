@@ -1,13 +1,18 @@
-var queryDict;
 
 $(function () {
 
-  queryDict = parseQuery(window.location.search);
+  // Parse the url in the address bar (the resulting dictionary might contain a request to create a new location)
+  var queryDict = parseQuery(window.location.search);
   console.log(queryDict);
- 
- 
+
+  var postedPlace;
+
+  // If the page was launched from the client in order to create a new location
   if (queryDict.action == 'place' && queryDict.signals != null) {
-    createDialog();
+    createLocationDialog(function (pos) {
+      postedPlace = pos;
+      placementIndicator();
+    });
   }
 
 
@@ -19,34 +24,36 @@ $(function () {
     imgHeight = $('#map-img').height();
   })
 
-  // Put user icons at the locations of mouse clicks on mouseclick on the map image
+  // If the user clicks on the map and the map is in placement mode, post the user's location on click
   $('#map-img').mousedown(function(eventObject) {
-    if (queryDict.action == 'place' && queryDict.signals != null) {
+    if (queryDict.action == 'place' && queryDict.signals != null && postedPlace != null) {
       var mouseX = eventObject.pageX - $('#map-img').offset().left;
       var mouseY = eventObject.pageY - $('#map-img').offset().top;
 
-      Api.postPlace('eh4', 'lounge', 'The SLAC Realm', function (err, json) {
-        console.log(err);
-        var place = json.place;
-
-        Api.postBind(queryDict.username, place.id, mouseX/imgWidth, mouseY/imgHeight, queryDict.signals, function (err, json) {
+        Api.postBind(queryDict.username, postedPlace.id, mouseX/imgWidth, mouseY/imgHeight, queryDict.signals, function (err, json) {
           console.log(err);          
-          addUserIcon(username, mouseX, mouseY);
-          reloadMapRoot();
-        });
+          addUserIcon(queryDict.username, mouseX, mouseY);
+          var bind = json.bind;
 
-      })
+          Api.postPosition(queryDict.username, bind.id, function (err, json) {
+            reloadMapRoot();
+          });
+        });
 
     }
 
   });
+  
 
+  // Request the position of all users and place markers there
   Api.getPositions(function (err, json) {
     var positions = json.positions;
     console.log(positions);
     for (var i=0; i < positions.length; i++) {
       Api.getBind(positions[i].bind, function (err, json) {
         var bind = json.bind;
+        // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
+        // We correct for this by multiplying by imgWidth and imgHeight.
         addUserIcon(bind.username, bind.x*imgWidth, bind.y*imgHeight);
       });
     }
@@ -55,11 +62,14 @@ $(function () {
 
 })
 
+// Call this to redirect to the root map url (without a query in the address bar)
 function reloadMapRoot() {
   window.location.href = window.location.origin + window.location.pathname;
 }
 
-function createDialog() {
+// Create a dialog for creating a new location
+function createLocationDialog(cb) {
+    // cb is a function with one parameter: the place that was posted
     var dialog = document.createElement('div');
     $(dialog).prop({'id': 'location-dialog', 'class': 'modal'});
     
@@ -68,7 +78,7 @@ function createDialog() {
     $(dialogHeader).appendTo(dialog);
 
     var dialogTitle = document.createElement('h3');
-    $(dialogTitle).html("Select your Location:");
+    $(dialogTitle).html("Select your Location (1/2)");
     $(dialogTitle).appendTo(dialogHeader);
 
     var dialogBody = document.createElement('div');
@@ -76,11 +86,11 @@ function createDialog() {
     $(dialogBody).appendTo(dialog);
 
     var form = document.createElement('form');
-    $(form).prop({'class': 'form-horizontal'});
+    $(form).prop({'class': 'form-horizontal', 'id': 'location-form', 'action':"/api/places", 'method':"post"});
     $(form).appendTo(dialogBody);
 
     var buildingInput = document.createElement('select');
-    $(buildingInput).prop({'class': "span2"}); 
+    $(buildingInput).prop({'class': "span2", 'id': 'building-input', 'name': 'floor'}); 
     var opt;
 
     opt = document.createElement('option');
@@ -124,29 +134,100 @@ function createDialog() {
     $(buildingInput).appendTo(form);
 
     var nameInput = document.createElement('input');
-    $(nameInput).prop({'type': "text", 'class': "span3", 'placeholder': "Common Name (Ex: lounge)"});
+    $(nameInput).prop({'type': "text", 'class': "span3", 'id': 'name-input', 'name': 'name', 'placeholder': "Common Name (Ex: lounge)", 'data-provide': "typeahead"});
     $(nameInput).appendTo(form);
 
     var aliasInput = document.createElement('input');
-    $(aliasInput).prop({'type': "text", 'class': "span3", 'placeholder': "Nickname (Ex: The SLAC Realm)"});
+    $(aliasInput).prop({'type': "text", 'class': "span3", 'id': 'alias-input', 'name': 'alias', 'placeholder': "Nickname (Ex: The SLAC Realm)", 'data-provide': "typeahead"});
     $(aliasInput).appendTo(form);
 
     var dialogFooter = document.createElement('div');
     $(dialogFooter).prop({'class': 'modal-footer'});
     $(dialogFooter).appendTo(dialog);
 
-    var doneButton = document.createElement('a');
-    $(doneButton).prop({'class': 'btn btn-primary', 'href':"#"});
-    $(doneButton).html("Done");
+    var doneButton = document.createElement('button');
+    $(doneButton).prop({'class': 'btn btn-primary', 'disabled': true, 'id': 'create-location-button'});
+    $(doneButton).html("Next");
     $(doneButton).appendTo(dialogFooter);
-    $(doneButton).click(function () {$(dialog).modal('hide');});
+
+
+    function enableIfFormFilled() {
+       if ($('#building-input').prop('selectedIndex') != 0 &&
+           $('#name-input').prop('value') != "" &&
+           $('#alias-input').prop('value') != "") {
+           $('#create-location-button').prop('disabled', false);
+       } else {
+          $('#create-location-button').prop('disabled', true); 
+       } 
+    }
+
+    $(buildingInput).change(function () {
+      enableIfFormFilled();
+      
+      var floor = $('#building-input').prop('value'); 
+      Api.getPlaces({'floor': floor}, function (err, json) {
+        console.log(err);
+        console.log(json);
+        $('#name-input').typeahead({'source': json.places.map(function (place) {return place.name})});
+      });
+    });
+    $(nameInput).change(enableIfFormFilled);
+    $(nameInput).keydown(enableIfFormFilled);
+    $(aliasInput).change(enableIfFormFilled);
+    $(aliasInput).keydown(enableIfFormFilled);
+
+    $(doneButton).click(function() {
+      $('#building-input').prop('disabled', true);
+      $('#name-input').prop('disabled', true);
+      $('#alias-input').prop('disabled', true);
+      $('#create-location-button').prop('disabled', true);
+
+      var floor = $('#building-input').prop('value');
+      var name = $('#name-input').prop('value');
+      var alias = $('#alias-input').prop('value');
+
+      Api.getPlaces({'floor': floor, 'name': name}, function (err, json) {
+        console.log(err);
+        console.log(json);
+
+        if (json.places.length > 0) {
+           // Place already exists.
+           // TODO: Replace alias/do alias voting thing?
+           cb(json.places[0]);
+        } else {
+           // Place doesn't exist; needs to be created
+           Api.postPlace(floor, name, alias, function (err, json) {
+            console.log(err);
+            var place = json.place;
+            cb(place);            
+          });         
+        }
+        $(dialog).modal('hide'); 
+
+      });
+
+
+
+    });
 
     $(dialog).appendTo($('body'));
 
-    
-    $('#location-dialog').modal({keyboard: false});  
+    // Actually present the modal dialog 
+    $('#location-dialog').modal({'keyboard': false, 'backdrop': 'static'});  
 }
 
+function placementIndicator() {
+    var guide = document.createElement('div');
+    $(guide).prop({'id': 'position-guide'});    
+
+    var title = document.createElement('h3');
+    $(title).html("Click on Your Position (2/2)");
+    $(title).appendTo($(guide));
+
+    $(guide).appendTo($('#map'));
+}
+
+// Add an icon to represent a user with username at a specified x,y position in pixels
 function addUserIcon(username, x, y) {
   var user = document.createElement('img');
   $(user).prop({'class': 'user', 'alt': username, 'src': 'Feet Raster.png'});
@@ -201,4 +282,3 @@ function parseQuery(str, separator) {
 		return obj;
 
 }
-

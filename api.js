@@ -9,23 +9,29 @@ function callback(call, cb) {
 var Api = window.Api = {};
 
 Api.getUser = function (username, cb) {
-	callback($.get('/api/users/' + username), cb)
+	callback($.get('/api/users/' + username), cb);
 };
 
 Api.getBind = function (id, cb) {
-	callback($.get('/api/binds/' + id), cb)
+	callback($.get('/api/binds/' + id), cb);
 };
 
 Api.getPlace = function (id, cb) {
-	callback($.get('/api/places/' + id), cb)
+	callback($.get('/api/places/' + id), cb);
 };
 
 Api.getPositions = function (cb) {
-	callback($.get('/api/positions/'), cb)
+	callback($.get('/api/positions/'), cb);
 };
 
-Api.getPlaces = function (cb) {
-	callback($.get('/api/places/'), cb)
+Api.getPlaces = function (criteria, cb) {
+    // criteria is optional
+    if (cb == null) {
+        cb = criteria;
+        callback($.get('/api/places/'), cb);
+    } else {
+      callback($.get('/api/places/', criteria), cb);
+    }
 };
 
 /* posting */
@@ -47,7 +53,7 @@ Api.postBind = function (username, place_id, x, y, signals, cb) {
 	callback($.post('/api/binds/', args), cb);
 };
 
-Api.postPosition = function (username, bind_id) {
+Api.postPosition = function (username, bind_id, cb) {
 	var args = {username: username, bind: bind_id};
 	callback($.post('/api/positions/', args), cb);
 };
