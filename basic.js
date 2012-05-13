@@ -134,11 +134,11 @@ function createLocationDialog(cb) {
     $(buildingInput).appendTo(form);
 
     var nameInput = document.createElement('input');
-    $(nameInput).prop({'type': "text", 'class': "span3", 'id': 'name-input', 'name': 'name', 'placeholder': "Common Name (Ex: lounge)", 'data-provide': "typeahead"});
+    $(nameInput).prop({'type': "text", 'class': "span3", 'id': 'name-input', 'name': 'name', 'placeholder': "Common Name (Ex: lounge)", 'data-provide': "typeahead", "autocomplete": 'off'});
     $(nameInput).appendTo(form);
 
     var aliasInput = document.createElement('input');
-    $(aliasInput).prop({'type': "text", 'class': "span3", 'id': 'alias-input', 'name': 'alias', 'placeholder': "Nickname (Ex: The SLAC Realm)", 'data-provide': "typeahead"});
+    $(aliasInput).prop({'type': "text", 'class': "span3", 'id': 'alias-input', 'name': 'alias', 'placeholder': "Nickname (Ex: The SLAC Realm)", 'data-provide': "typeahead", "autocomplete": 'off'});
     $(aliasInput).appendTo(form);
 
     var dialogFooter = document.createElement('div');
@@ -234,9 +234,10 @@ function addUserIcon(username, x, y) {
   $(user).on('load', function () {
       var userPosX = x - user.width/2.0;
       var userPosY = y - user.height/2.0;
+      $(user).tooltip({'title': username});
       $(user).css({'left': userPosX, 'top': userPosY}).appendTo($('#map'));
   });
-}
+  }
 
 // Function from https://github.com/voituk/Misc/blob/master/js/hash.js
 function parseQuery(str, separator) {
