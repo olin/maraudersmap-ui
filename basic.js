@@ -3,7 +3,6 @@ $(function () {
   
   // Parse the url in the address bar (the resulting dictionary might contain a request to create a new location)
   var queryDict = parseQuery(window.location.search);
-  console.log(queryDict);
 
   var visibleUsers = {}; // Will keep track of users and their positions
   var allBinds = {}; // Will keep track of all binds to reduce request count
@@ -50,7 +49,7 @@ $(function () {
                           
                           Api.postBind(queryDict.username, postedPlace.id, mouseX/imgWidth, mouseY/imgHeight, queryDict.signals, function (err, json) {
                                        console.log(err);          
-                                       addUserMarker(queryDict.username, mouseX, mouseY);
+                                       //addPositionMarker(queryDict.username, mouseX, mouseY);
                                        var bind = json.bind;
                                        
                                        Api.postPosition(queryDict.username, bind.id, function (err, json) {
@@ -169,7 +168,6 @@ function createLocationDialog(cb) {
                             var floor = $('#building-input').prop('value'); 
                             Api.getPlaces({'floor': floor}, function (err, json) {
                                           console.log(err);
-                                          console.log(json);
                                           $('#name-input').typeahead({'source': json.places.map(function (place) {return place.name})});
                                           });
                             });
@@ -190,7 +188,6 @@ function createLocationDialog(cb) {
                         
                         Api.getPlaces({'floor': floor, 'name': name}, function (err, json) {
                                       console.log(err);
-                                      console.log(json);
                                       
                                       if (json.places.length > 0) {
                                       // Place already exists.
@@ -238,26 +235,24 @@ function updateUsers(usersObject, existingBinds, boundsWidth, boundsHeight, cb) 
 
                      Api.getPositions(function (err, json) {
                                       var positions = json.positions;
-                                      console.log(positions);
         
                                       for (var i=0; i < positions.length; i++) {
 
                                       var bindID = positions[i].bind;
-                                      var username = positions[i].username;
 
                                       if (existingBinds[bindID] != undefined) {
                                                   var bind = existingBinds[bindID];
-                                                  associateUserMarkerWithBind(usersObject, username, bind, boundsWidth, boundsHeight);
+                                                  associatePositionMarkerWithBind(usersObject, positions[i], bind, boundsWidth, boundsHeight);
                                       } else {
 
                                       //Anonymous function to create a local scope for the variables the callback needs to operate.
-                                      (function (bindID, uname) {
+                                      (function (bindID, position) {
                                        Api.getBind(bindID, function (err, json) {
                                                    var bind = json.bind;
                                                    existingBinds[bindID] = bind;
-                                                   associateUserMarkerWithBind(usersObject, uname, bind, boundsWidth, boundsHeight);                                                   
+                                                   associatePositionMarkerWithBind(usersObject, position, bind, boundsWidth, boundsHeight);                                                   
                                                    });
-                                       })(bindID, username);
+                                       })(bindID, positions[i]);
 
                                       }
 
@@ -280,33 +275,76 @@ function updateUsers(usersObject, existingBinds, boundsWidth, boundsHeight, cb) 
 }
 
 // Create a user marker if necessary. Otherwise, move existing user marker
-function associateUserMarkerWithBind(usersObject, uname, bind, boundsWidth, boundsHeight) {
+function associatePositionMarkerWithBind(usersObject, positionObject, bind, boundsWidth, boundsHeight) {
+                            var uname = positionObject.username;
                                                      // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
                                                    // We correct for this by multiplying by boundsWidth and boundsHeight.
                              if (usersObject[uname] == undefined) {
-                               addUserMarker(uname, bind.x*boundsWidth, bind.y*boundsHeight);
-                               usersObject[uname] = {'x': bind.x, 'y':bind.y};    
+                               addPositionMarker(positionObject, bind.x*boundsWidth, bind.y*boundsHeight);
+                               usersObject[uname] = {'x': bind.x, 'y':bind.y};
                              } else {
-                               moveUserMarkerTo(uname, bind.x*boundsWidth, bind.y*boundsHeight);
+                               movePositionMarkerTo(positionObject, bind.x*boundsWidth, bind.y*boundsHeight);
                                usersObject[uname] = {'x': bind.x, 'y':bind.y}; 
                              }   
 }
 
+function parseTimeDiff(now, then) {
+  var msAgo = now-then;
+  if(msAgo < 1000*60) {
+    return "Updated less than a minute ago.";  
+  } else if (msAgo < 1000*60*60) {
+    var minutes = Math.floor(msAgo/1000/60);
+    if (minutes == 1) {
+      return "Updated about a minute ago.";
+    } else {
+      return "Updated about "+minutes+" minutes ago.";
+    }
+  } else if (msAgo < 1000*60*60*24) {
+    var hours = Math.floor(msAgo/1000/60/60);
+     if (hours == 1) {
+      return "Updated about an hour ago.";
+    } else {
+      return "Updated about "+hours+" hours ago.";
+    }   
+  } else {
+    return "Last updated "+then+".";
+  }
+}
+
 // Add an icon to represent a user with username at a specified x,y position in pixels
-function addUserMarker(username, x, y) {
+function addPositionMarker(positionObject, x, y) {
+    var username = positionObject.username;
     var user = document.createElement('img');
     $(user).prop({'class': 'user', 'id': username, 'alt': username, 'src': 'Feet Raster.png'});
     $(user).on('load', function () {
                var userPosX = x - user.width/2.0;
                var userPosY = y - user.height/2.0;
+               var timeAgo = parseTimeDiff(new Date, new Date(positionObject.date));
+               // While you hover over a marker, the marker's username is displayed
+               // If you click on the marker, an info box appears with more information about them.
+               // This info box disappears when you stop hovering over the icon.
                $(user).tooltip({'title': username});
+               $(user).popover({'trigger': 'manual', 'title': username, 'content': timeAgo});
+               $(user).click(function () {
+                 $(user).tooltip('hide');                 
+                 $(user).popover('show');
+                 });
+               $(user).hover(function () {}, 
+               function () {
+                 $(user).popover('hide');
+                 });
                $(user).css({'left': userPosX, 'top': userPosY}).appendTo($('#map'));
                });
 }
 
 // Move a user marker with username to a specified x,y position in pixels
-function moveUserMarkerTo(username, x, y) {
+function movePositionMarkerTo(positionObject, x, y) {
+    var username = positionObject.username;
     var user = $('#'+username);
+    var timeAgo = parseTimeDiff(new Date, new Date(positionObject.date));
+    var popup = user.data('popover');
+    popup.options.content = timeAgo;
+
     // width is a function since JQuery returns a list of things (in this case with one element)
     var userPosX = x - user.width()/2.0;
     var userPosY = y - user.height()/2.0;
