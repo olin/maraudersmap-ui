@@ -2,7 +2,6 @@
  * The div that contains the map image
  */
 div#map {
-  border: 5px solid black;
   position: relative;
 }
 
