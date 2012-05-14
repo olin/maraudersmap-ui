@@ -287,6 +287,11 @@ function parseTimeDiff(now, then) {
   }
 }
 
+function getInfoFromExtendedPosition(extendedPosition) {
+               var timeAgo = parseTimeDiff(new Date, new Date(extendedPosition.date));
+               return timeAgo+"\n"+extendedPosition.extended.place.floor+"\n"+extendedPosition.extended.place.alias;
+}
+
 // Add an icon to represent a user with username at a specified x,y position in pixels
 function addPositionMarker(extendedPosition, x, y) {
     var username = extendedPosition.username;
@@ -295,13 +300,11 @@ function addPositionMarker(extendedPosition, x, y) {
     $(marker).on('load', function () {
                var markerPosX = x - marker.width/2.0;
                var markerPosY = y - marker.height/2.0;
-               var timeAgo = parseTimeDiff(new Date, new Date(extendedPosition.date));
                // While you hover over a marker, the marker's username is displayed
                // If you click on the marker, an info box appears with more information about them.
                // This info box disappears when you stop hovering over the icon.
                $(marker).tooltip({'title': username});
-               var info = timeAgo+"/n"+extendedPosition.extended.place.floor+"/n"+extendedPosition.extended.place.alias;
-               $(marker).popover({'trigger': 'manual', 'title': username, 'content': info});
+               $(marker).popover({'trigger': 'manual', 'title': username, 'content': getInfoFromExtendedPosition(extendedPosition)});
                $(marker).click(function () {
                  $(marker).tooltip('hide');                 
                  $(marker).popover('show');
@@ -318,10 +321,8 @@ function addPositionMarker(extendedPosition, x, y) {
 function movePositionMarkerTo(extendedPosition, x, y) {
     var username = extendedPosition.username;
     var marker = $('#'+username);
-    var timeAgo = parseTimeDiff(new Date, new Date(extendedPosition.date));
-    var info = timeAgo+"/n"+extendedPosition.extended.place.floor+"/n"+extendedPosition.extended.place.alias;
     var popup = marker.data('popover');
-    popup.options.content = info;
+    popup.options.content = getInfoFromExtendedPosition(extendedPosition);
 
     // width is a function since JQuery returns a list of things (in this case with one element)
     var markerPosX = x - marker.width()/2.0;
