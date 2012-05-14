@@ -5,7 +5,6 @@ $(function () {
   var queryDict = parseQuery(window.location.search);
 
   var visibleUsers = {}; // Will keep track of users and their positions
-  var allBinds = {}; // Will keep track of all binds to reduce request count
   
   var postedPlace; //Keeps track of the place the user will post from the dialog (if the user decides to create a custom bind)
   // If the page was launched from the client in order to create a new bind
@@ -23,22 +22,14 @@ $(function () {
                    imgWidth = $('#map-img').width();
                    imgHeight = $('#map-img').height();
                    
-                   
-                   Api.getBinds(function (err, json) {
-
-                     for (var i=0; i < json.binds.length; i++) {
-                          allBinds[json.binds[i].id] = json.binds[i];
-                     }
-
-
-                   updateUsers(visibleUsers, allBinds, imgWidth, imgHeight, function () {
+                   updateUsers(visibleUsers, imgWidth, imgHeight, function () {
 
                                setInterval(function() {
                                            // Update user positions every second; may need to increase this delay to deal with server load
                                            updateUsers(visibleUsers, allBinds, imgWidth, imgHeight, function () {})
                                            }, 1000);
                                });
-                   });
+                   
                    });
   
   // If the user clicks on the map and the map is in placement mode, post the user's location on click
@@ -229,61 +220,46 @@ function placementIndicator() {
 
 
 
-function updateUsers(usersObject, existingBinds, boundsWidth, boundsHeight, cb) {
+function updateUsers(usersObject, boundsWidth, boundsHeight, cb) {
     
                      var newUsers = {};
 
-                     Api.getPositions(function (err, json) {
-                                      var positions = json.positions;
-        
+                     Api.getPositions(true, function (err, json) {
+                                      var extendedPositions = json.positions;
+
                                       for (var i=0; i < positions.length; i++) {
+                                        associatePositionMarkerWithBind(usersObject, extendedPositions[i], boundsWidth, boundsHeight);
 
-                                      var bindID = positions[i].bind;
+                                        newUsers[extendedPositions[i].username] = true;
 
-                                      if (existingBinds[bindID] != undefined) {
-                                                  var bind = existingBinds[bindID];
-                                                  associatePositionMarkerWithBind(usersObject, positions[i], bind, boundsWidth, boundsHeight);
-                                      } else {
+                                         for (var uname in usersObject) {
+                                           if (usersObject.hasOwnProperty(uname)) { // Make sure that the attribute belongs to the instance and not to the prototype
+                                             if (newUsers[uname] != true) {
+                                                delete usersObject[uname]; 
+                                                $('#'+uname).remove();
+                                             }
+                                           }  
+                                         }
 
-                                      //Anonymous function to create a local scope for the variables the callback needs to operate.
-                                      (function (bindID, position) {
-                                       Api.getBind(bindID, function (err, json) {
-                                                   var bind = json.bind;
-                                                   existingBinds[bindID] = bind;
-                                                   associatePositionMarkerWithBind(usersObject, position, bind, boundsWidth, boundsHeight);                                                   
-                                                   });
-                                       })(bindID, positions[i]);
+                                         cb();
 
                                       }
-
-                                       newUsers[positions[i].username] = true;
-                                      }
-                                       for (var uname in usersObject) {
-                                         if (usersObject.hasOwnProperty(uname)) { // Make sure that the attribute belongs to the instance and not to the prototype
-                                           if (newUsers[uname] != true) {
-                                              delete usersObject[uname]; 
-                                              $('#'+uname).remove();
-                                           }
-                                         }  
-                                       }
-
-                                       cb();
-
-                                      });
-
+                       
+                     });
 
 }
 
 // Create a user marker if necessary. Otherwise, move existing user marker
-function associatePositionMarkerWithBind(usersObject, positionObject, bind, boundsWidth, boundsHeight) {
-                            var uname = positionObject.username;
-                                                     // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
-                                                   // We correct for this by multiplying by boundsWidth and boundsHeight.
+function associatePositionMarkerWithBind(usersObject, extendedPosition, boundsWidth, boundsHeight) {
+                            var uname = extendedPosition.username;
+
+                             // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
+                             // We correct for this by multiplying by boundsWidth and boundsHeight.
                              if (usersObject[uname] == undefined) {
-                               addPositionMarker(positionObject, bind.x*boundsWidth, bind.y*boundsHeight);
+                               addPositionMarker(extendedPosition, bind.x*boundsWidth, bind.y*boundsHeight);
                                usersObject[uname] = {'x': bind.x, 'y':bind.y};
                              } else {
-                               movePositionMarkerTo(positionObject, bind.x*boundsWidth, bind.y*boundsHeight);
+                               movePositionMarkerTo(extendedPosition, bind.x*boundsWidth, bind.y*boundsHeight);
                                usersObject[uname] = {'x': bind.x, 'y':bind.y}; 
                              }   
 }
@@ -312,43 +288,45 @@ function parseTimeDiff(now, then) {
 }
 
 // Add an icon to represent a user with username at a specified x,y position in pixels
-function addPositionMarker(positionObject, x, y) {
-    var username = positionObject.username;
-    var user = document.createElement('img');
-    $(user).prop({'class': 'user', 'id': username, 'alt': username, 'src': 'Feet Raster.png'});
-    $(user).on('load', function () {
-               var userPosX = x - user.width/2.0;
-               var userPosY = y - user.height/2.0;
-               var timeAgo = parseTimeDiff(new Date, new Date(positionObject.date));
+function addPositionMarker(extendedPosition, x, y) {
+    var username = extendedPosition.username;
+    var marker = document.createElement('img');
+    $(marker).prop({'class': 'user', 'id': username, 'alt': username, 'src': 'Feet Raster.png'});
+    $(marker).on('load', function () {
+               var markerPosX = x - marker.width/2.0;
+               var markerPosY = y - marker.height/2.0;
+               var timeAgo = parseTimeDiff(new Date, new Date(extendedPosition.date));
                // While you hover over a marker, the marker's username is displayed
                // If you click on the marker, an info box appears with more information about them.
                // This info box disappears when you stop hovering over the icon.
-               $(user).tooltip({'title': username});
-               $(user).popover({'trigger': 'manual', 'title': username, 'content': timeAgo});
-               $(user).click(function () {
-                 $(user).tooltip('hide');                 
-                 $(user).popover('show');
+               $(marker).tooltip({'title': username});
+               var info = timeAgo+"/n"+extendedPosition.place.floor+"/n"+extendedPosition.place.alias;
+               $(marker).popover({'trigger': 'manual', 'title': username, 'content': info});
+               $(marker).click(function () {
+                 $(marker).tooltip('hide');                 
+                 $(marker).popover('show');
                  });
-               $(user).hover(function () {}, 
+               $(marker).hover(function () {}, 
                function () {
-                 $(user).popover('hide');
+                 $(marker).popover('hide');
                  });
-               $(user).css({'left': userPosX, 'top': userPosY}).appendTo($('#map'));
+               $(marker).css({'left': markerPosX, 'top': markerPosY}).appendTo($('#map'));
                });
 }
 
 // Move a user marker with username to a specified x,y position in pixels
-function movePositionMarkerTo(positionObject, x, y) {
-    var username = positionObject.username;
-    var user = $('#'+username);
-    var timeAgo = parseTimeDiff(new Date, new Date(positionObject.date));
-    var popup = user.data('popover');
-    popup.options.content = timeAgo;
+function movePositionMarkerTo(extendedPosition, x, y) {
+    var username = extendedPosition.username;
+    var marker = $('#'+username);
+    var timeAgo = parseTimeDiff(new Date, new Date(extendedPosition.date));
+    var info = timeAgo+"/n"+extendedPosition.place.floor+"/n"+extendedPosition.place.alias;
+    var popup = marker.data('popover');
+    popup.options.content = info;
 
     // width is a function since JQuery returns a list of things (in this case with one element)
-    var userPosX = x - user.width()/2.0;
-    var userPosY = y - user.height()/2.0;
-    $('#'+username).css({'left': userPosX, 'top': userPosY});
+    var markerPosX = x - marker.width()/2.0;
+    var markerPosY = y - marker.height()/2.0;
+    $('#'+username).css({'left': markerPosX, 'top': markerPosY});
 }
 
 // Function adapted from https://github.com/voituk/Misc/blob/master/js/hash.js
