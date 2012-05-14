@@ -26,7 +26,7 @@ $(function () {
 
                                setInterval(function() {
                                            // Update user positions every second; may need to increase this delay to deal with server load
-                                           updateUsers(visibleUsers, allBinds, imgWidth, imgHeight, function () {})
+                                           updateUsers(visibleUsers, imgWidth, imgHeight, function () {})
                                            }, 1000);
                                });
                    
