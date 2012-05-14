@@ -232,6 +232,8 @@ function updateUsers(usersObject, boundsWidth, boundsHeight, cb) {
 
                                         newUsers[extendedPositions[i].username] = true;
 
+                                      }
+
                                          for (var uname in usersObject) {
                                            if (usersObject.hasOwnProperty(uname)) { // Make sure that the attribute belongs to the instance and not to the prototype
                                              if (newUsers[uname] != true) {
@@ -242,8 +244,6 @@ function updateUsers(usersObject, boundsWidth, boundsHeight, cb) {
                                          }
 
                                          cb();
-
-                                      }
                        
                      });
 
