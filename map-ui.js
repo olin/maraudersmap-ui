@@ -227,7 +227,7 @@ function updateUsers(usersObject, boundsWidth, boundsHeight, cb) {
                      Api.getPositions(true, function (err, json) {
                                       var extendedPositions = json.positions;
 
-                                      for (var i=0; i < positions.length; i++) {
+                                      for (var i=0; i < extendedPositions.length; i++) {
                                         associatePositionMarkerWithBind(usersObject, extendedPositions[i], boundsWidth, boundsHeight);
 
                                         newUsers[extendedPositions[i].username] = true;
