@@ -294,6 +294,7 @@ function getInfoFromExtendedPosition(extendedPosition) {
 
 // Add an icon to represent a user with username at a specified x,y position in pixels
 function addPositionMarker(extendedPosition, x, y) {
+    console.log("Made Person Marker with "+extendedPosition.username);
     var username = extendedPosition.username;
     var marker = document.createElement('img');
     $(marker).prop({'class': 'user', 'id': username, 'alt': username, 'src': 'Feet Raster.png'});
@@ -327,7 +328,7 @@ function movePositionMarkerTo(extendedPosition, x, y) {
     // width is a function since JQuery returns a list of things (in this case with one element)
     var markerPosX = x - marker.width()/2.0;
     var markerPosY = y - marker.height()/2.0;
-    $('#'+username).css({'left': markerPosX, 'top': markerPosY});
+    marker.css({'left': markerPosX, 'top': markerPosY});
 }
 
 // Function adapted from https://github.com/voituk/Misc/blob/master/js/hash.js
