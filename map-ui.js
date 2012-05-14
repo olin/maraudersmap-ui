@@ -252,7 +252,7 @@ function updateUsers(usersObject, boundsWidth, boundsHeight, cb) {
 // Create a user marker if necessary. Otherwise, move existing user marker
 function associatePositionMarkerWithBind(usersObject, extendedPosition, boundsWidth, boundsHeight) {
                             var uname = extendedPosition.username;
-
+                            var bind = extendedPosition.extended.bind;
                              // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
                              // We correct for this by multiplying by boundsWidth and boundsHeight.
                              if (usersObject[uname] == undefined) {
@@ -300,7 +300,7 @@ function addPositionMarker(extendedPosition, x, y) {
                // If you click on the marker, an info box appears with more information about them.
                // This info box disappears when you stop hovering over the icon.
                $(marker).tooltip({'title': username});
-               var info = timeAgo+"/n"+extendedPosition.place.floor+"/n"+extendedPosition.place.alias;
+               var info = timeAgo+"/n"+extendedPosition.extended.place.floor+"/n"+extendedPosition.extended.place.alias;
                $(marker).popover({'trigger': 'manual', 'title': username, 'content': info});
                $(marker).click(function () {
                  $(marker).tooltip('hide');                 
@@ -319,7 +319,7 @@ function movePositionMarkerTo(extendedPosition, x, y) {
     var username = extendedPosition.username;
     var marker = $('#'+username);
     var timeAgo = parseTimeDiff(new Date, new Date(extendedPosition.date));
-    var info = timeAgo+"/n"+extendedPosition.place.floor+"/n"+extendedPosition.place.alias;
+    var info = timeAgo+"/n"+extendedPosition.extended.place.floor+"/n"+extendedPosition.extended.place.alias;
     var popup = marker.data('popover');
     popup.options.content = info;
 
